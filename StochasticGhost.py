@@ -30,21 +30,21 @@ def makeparms(maxiter=1, beta=10, rho=0.8, lamb=0.5, hess='diag', tau=1., mbsz=1
     return params
 
 
-def computekappa( cval, cgrad, rho, lamb, n):
+def computekappa( cval, cgrad, rho, lamb, mc, n):
     obj = np.concatenate(([1.], np.zeros((n,))))
     Aubt = np.concatenate((([-1.]), cgrad))
     # if there are multiple constraints? Aubt.reshape(mc,n+1) ??
-    Aubt = Aubt.reshape(1, n+1)
+    Aubt = Aubt.reshape(mc, n+1)
     res = linprog(c=obj, A_ub=Aubt, b_ub=[-cval], bounds=(-rho, rho))
     return ((1-lamb)*max(0, cval)+lamb*max(0, res.fun))
 
 
-def solvesubp(fgrad, cval, cgrad, kap, beta, tau, hesstype, n):
+def solvesubp(fgrad, cval, cgrad, kap, beta, tau, hesstype, mc, n):
     if hesstype == 'diag':
        #P = tau*nx.eye(n)
        P = tau*np.identity(n)
     # reshaping cgrad to (1,n), shouldn't it be more generalized? i.e. (mc, n) and if we are passing the cgrad as Jeval, it will automatically be that shape
-    return solve_qp(P, fgrad.reshape((n,)), cgrad.reshape((1, n)), list_to_array([(kap-cval)]), np.zeros((0, n)), np.zeros((0,)), -beta*np.ones((n,)), beta*np.ones((n,)), solver='osqp')
+    return solve_qp(P, fgrad.reshape((n,)), cgrad.reshape((mc, n)), list_to_array([(kap-cval)]), np.zeros((0, n)), np.zeros((0,)), -beta*np.ones((n,)), beta*np.ones((n,)), solver='osqp')
 
 
 # initw : Initial parameters of the Network (Weights and Biases)
@@ -142,12 +142,12 @@ def StochasticGhost(obj_fun, obj_grad, con_funs, con_grads, initw, params):
             # cgrad = nx.concatenate((cgrad, Jeval[i, :]))
 
           # expects cgrad as a 1-D array, but it will be (mc, n) shape array
-          kap = computekappa(ceval[0], Jeval[0], rho, lamb, n)
+          kap = computekappa(ceval[0], Jeval[0], rho, lamb, mc, n)
           print(type(kap), type(fgrad),
                 type(ceval[0]), type(Jeval[0]))
           print(fgrad)
           print(Jeval[0])
-          dsol = solvesubp(fgrad, ceval[0], Jeval[0], kap, beta, tau, hess, n)
+          dsol = solvesubp(fgrad, ceval[0], Jeval[0], kap, beta, tau, hess, mc, n)
           dsols[j, :] = dsol
 
         dsol = dsols[0, :] + (dsols[3, :]-0.5*dsols[1, :] -
