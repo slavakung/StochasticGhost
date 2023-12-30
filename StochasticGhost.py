@@ -22,41 +22,51 @@ def makeparms(maxiter=1, beta=10, rho=0.8, lamb=0.5, hess='diag', tau=1., mbsz=1
         'mbsz': mbsz,  # the standard minibatch size, used for evaluating the progress of the objective and constraint
         'numcon': numcon,  # number of constraint functions
         'geomp': geomp,  # parameter for the geometric random variable defining the number of subproblem samples
-        # strategy for step decrease, options include 'dimin' 'stepwise' 'slowdimin' 'constant'
-        'stepdecay': stepdecay,
+        'stepdecay': stepdecay, # strategy for step decrease, options include 'dimin' 'stepwise' 'slowdimin' 'constant'
         'gammazero': gammazero,  # initial stepsize
         'zeta': zeta,  # parameter associated with the stepsize iteration
     }
     return params
 
 
-def computekappa( cval, cgrad, rho, lamb, mc, n):
+# def computekappa( cval, cgrad, rho, lamb, mc, n):
+#     obj = np.concatenate(([1.], np.zeros((n,))))
+#     Aubt = np.concatenate((([-1.]), cgrad))
+#     # if there are multiple constraints? Aubt.reshape(mc,n+1) ??
+#     Aubt = Aubt.reshape(mc, n+1)
+#     res = linprog(c=obj, A_ub=Aubt, b_ub=[-cval], bounds=(-rho, rho))
+#     return ((1-lamb)*max(0, cval)+lamb*max(0, res.fun))
+
+def computekappa(cval, cgrad, lamb, rho, mc, n):  
     obj = np.concatenate(([1.], np.zeros((n,))))
-    Aubt = np.concatenate((([-1.]), cgrad))
-    # if there are multiple constraints? Aubt.reshape(mc,n+1) ??
-    Aubt = Aubt.reshape(mc, n+1)
-    res = linprog(c=obj, A_ub=Aubt, b_ub=[-cval], bounds=(-rho, rho))
-    return ((1-lamb)*max(0, cval)+lamb*max(0, res.fun))
+    Aubt = np.column_stack((-np.ones(mc), np.array(cgrad)))
+    res = linprog(c=obj, A_ub=Aubt, b_ub=-np.array(cval), bounds=[(-rho, rho)])
+    return (1-lamb)*max(0, sum(cval)) + lamb*max(0, res.fun)
 
 
-def solvesubp(fgrad, cval, cgrad, kap, beta, tau, hesstype, mc, n):
+
+
+# def solvesubp(fgrad, cval, cgrad, kap, beta, tau, hesstype, mc, n):
+#     if hesstype == 'diag':
+#        #P = tau*nx.eye(n)
+#        P = tau*np.identity(n)
+#     return solve_qp(P, fgrad.reshape((n,)), cgrad.reshape((mc, n)), list_to_array([(kap-cval)]), np.zeros((0, n)), np.zeros((0,)), -beta*np.ones((n,)), beta*np.ones((n,)), solver='osqp')
+
+
+def solvesubp(fgrad, cval, cgrad, kap_val, beta, tau, hesstype, mc, n):
     if hesstype == 'diag':
-       #P = tau*nx.eye(n)
+       # P = tau*nx.eye(n)
        P = tau*np.identity(n)
-    # reshaping cgrad to (1,n), shouldn't it be more generalized? i.e. (mc, n) and if we are passing the cgrad as Jeval, it will automatically be that shape
-    return solve_qp(P, fgrad.reshape((n,)), cgrad.reshape((mc, n)), list_to_array([(kap-cval)]), np.zeros((0, n)), np.zeros((0,)), -beta*np.ones((n,)), beta*np.ones((n,)), solver='osqp')
-
+       kap = kap_val * np.ones(mc)
+       cval = np.array(cval)
+    return solve_qp(P, fgrad.reshape((n,)), cgrad.reshape((mc, n)), kap-cval, np.zeros((0, n)), np.zeros((0,)), -beta*np.ones((n,)), beta*np.ones((n,)), solver='osqp')
 
 # initw : Initial parameters of the Network (Weights and Biases)
 
-# Should pass a network Object ?
-# For obj_function evaluation in each iteration, we need to do a forward pass in the NN
-# Back and forth function calls
+
 def StochasticGhost(obj_fun, obj_grad, con_funs, con_grads, initw, params):
-    # N = params["N"] # Total train/val samples
-    # print(params["N"])
     N = params["N"]
-    n = params["n"]  # Total network parameters
+    n = params["n"]  
     maxiter = params["maxiter"]
     beta = params["beta"]
     rho = params["rho"]
@@ -70,22 +80,14 @@ def StochasticGhost(obj_fun, obj_grad, con_funs, con_grads, initw, params):
     gamma0 = params["gammazero"]
     zeta = params["zeta"]
     gamma = gamma0
+    lossbound = params["lossbound"]
 
-    #initw = list_to_array(initw)
-    #nx = get_backend(initw)
-    #w = nx.copy(initw)
-    #print("The params:", w)
+    
     w = initw
     for i in range(len(w)):
         w[i] = ar.to_numpy(w[i])
-        # print(w[i].size)
-    # feval = net_obj.forward_utility(w,mbsz)
-    # forward_utility defined in the Model class then calls forward with the updated weights
-    # After every iteration, have to go back and update the weights of network manually in the Model Class?
-    # network.named_parameter.weight0 = w[0] ..... so on
 
-    feval = obj_fun(w, mbsz)  # returns a tensor(Should return a generic type)
-    # fgrad = nx.zeros((n,))
+    feval = obj_fun(w, mbsz)  
     ceval = np.zeros((mc,))
     Jeval = np.zeros((mc, n))
 
@@ -94,10 +96,10 @@ def StochasticGhost(obj_fun, obj_grad, con_funs, con_grads, initw, params):
     iterfs[0] = feval
     for i in range(mc):
        conf = con_funs[i]
-       print("LOOKIE LOOKIE::::::::: ", conf(w, mbsz))
        ceval[i] = np.max(conf(w, mbsz), 0)
-    itercs = np.zeros((maxiter,))
-    itercs[0] = np.max(ceval)
+    #itercs = np.zeros((maxiter,))
+    itercs = np.zeros((maxiter, mc))
+    itercs[0,:] = np.max(ceval)
 
     for iteration in range(0, maxiter):
 
@@ -114,10 +116,8 @@ def StochasticGhost(obj_fun, obj_grad, con_funs, con_grads, initw, params):
         while (2**(Nsamp+1)) > N:
           Nsamp = np.random.geometric(p=geomp)
 
-#        mbatch1 = np.random.choice(N, 1, replace=False)
-#        mbatch2 = np.random.choice(N, 2**Nsamp, replace=False)
-#        mbatch3 = np.random.choice(N, 2**Nsamp, replace=False)
-#        mbatch4 = np.random.choice(N, 2**(Nsamp+1), replace=False)
+        # Only specify the number of minibatches here
+        # Lets the user decide on the samples for each minibatch number
         mbatches = [1, 2**Nsamp, 2**Nsamp, 2**(Nsamp+1)]
         dsols = np.zeros((4, n))
 
@@ -133,31 +133,24 @@ def StochasticGhost(obj_fun, obj_grad, con_funs, con_grads, initw, params):
             conJ = con_grads[i]
             # ceval and Jeval are evaluations of ith constraint and constraint grads for the parameter values
             # nx.max(conf(w,mbatches[j]),0) to ensure the problem is always in the feasible region
-            ceval[i] = np.max(conf(w, mbatches[j]), 0)
+            ceval[i] = np.max(conf(w, mbatches[j]) - lossbound[i], 0)
             Jeval[i, :] = ar.to_numpy(conJ(w, mbatches[j]))
-            #cons_grad = [ar.to_numpy(element) for element in cons_grad]
-            #Jeval[i, :] = cons_grad
+            
             print(type(Jeval[i, :]))
             # cval = nx.concatenate((cval, ceval[i]))
             # cgrad = nx.concatenate((cgrad, Jeval[i, :]))
 
-          # expects cgrad as a 1-D array, but it will be (mc, n) shape array
-          kap = computekappa(ceval[0], Jeval[0], rho, lamb, mc, n)
-          print(type(kap), type(fgrad),
-                type(ceval[0]), type(Jeval[0]))
-          print(fgrad)
-          print(Jeval[0])
-          dsol = solvesubp(fgrad, ceval[0], Jeval[0], kap, beta, tau, hess, mc, n)
+          # Compute Kappa for the Subproblem bound 
+          kap = computekappa(ceval, Jeval, rho, lamb, mc, n)
+          # Solving the subproblem
+          dsol = solvesubp(fgrad, ceval, Jeval, kap, beta, tau, hess, mc, n)
           dsols[j, :] = dsol
 
         dsol = dsols[0, :] + (dsols[3, :]-0.5*dsols[1, :] -
                               0.5*dsols[2, :])/(geomp*((1-geomp)**Nsamp))
-        #print("Hey, I reached here and calculated the value of d :)")
-        print(type(dsol))
-        # print(dsol.shape)
-        # print(w.shape)
 
         # w = w + gamma*dsol
+        # The stepsize evaluation from the previously calculated gradients
         start = 0
         for i in range(len(w)):
            #print(w[i].size)
@@ -165,12 +158,11 @@ def StochasticGhost(obj_fun, obj_grad, con_funs, con_grads, initw, params):
            w[i] = w[i] + gamma*np.reshape(dsol[start:end], np.shape(w[i]))
            start = end
         
-        #print("Hey ", iteration+1, " iteration completed")
         feval = obj_fun(w, mbsz)
         iterfs[iteration] = feval
         for i in range(mc):
           conf = con_funs[i]
           ceval[i] = np.max(conf(w, mbsz), 0)
-        itercs[iteration] = np.max(ceval)
+        itercs[iteration, :] = ceval
 
     return w, iterfs, itercs
