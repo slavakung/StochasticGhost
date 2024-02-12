@@ -17,7 +17,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 import torch.optim as optim
-from .. import Ghost
+from .. import StochasticGhost
 import torch.nn.functional as F
 
 SENSITIVE_CODE_1 = 1
@@ -325,7 +325,7 @@ for trial in range(trials):
     num_param = sum(p.numel() for p in net.parameters())
     params = paramvals(maxiter=maxiter, beta=10., rho=1e-4, lamb=0.5, hess='diag', tau=6., mbsz=100,
                        numcon=1, geomp=0.2, stepdecay='dimin', gammazero=0.1, zeta=0.1, N=num_trials, n=num_param, lossbound=[1e-5], scalef=[5.])
-    w, iterfs, itercs = Ghost.StochasticGhost(
+    w, iterfs, itercs = StochasticGhost.StochasticGhost(
         net.obj_fun, net.obj_grad, [net.conf], [net.conJ], initw, params)
     ftrial[:, trial] = iterfs
     #print("The moment of TRUTH",itercs.shape)
