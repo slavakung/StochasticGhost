@@ -12,22 +12,22 @@ To install and use this package, follow these steps:
 
 # 1. Clone this repository to your local machine:
 
-   git clone project_url
-   cd your_project
+   $git clone project_url
+   $cd your_project
 
 # 2. Create a virtual environment with python 3.10
   ### using python venv
    
-   python3.10 -m venv myenv
+   $python3.10 -m venv myenv
 
    Activate the virtual environment
    
-   source myenv/bin/activate
+   $source myenv/bin/activate
 
   ### using conda environments
 
-   conda create -n myenv python=3.10
+   $conda create -n myenv python=3.10
 
    Activate the conda environment
    
-   source activate myenv
+   $source activate myenv
