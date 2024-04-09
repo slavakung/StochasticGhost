@@ -1,7 +1,6 @@
 import os
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
-from Cython.Build import cythonize
 
 setup(
     name='StochasticGhost',
@@ -13,6 +12,7 @@ setup(
     ext_modules=extensions,
     python_requires='>=3.10',
     install_requires=[
+        'setuptools'
         'numpy',
         'ot',
         'warnings',
