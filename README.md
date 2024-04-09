@@ -35,6 +35,9 @@ To install and use this package, follow these steps:
 # 3. To build manually (installs all dependencies)
 
    $cd StochasticGhost
+   
    $pip install wheel
+   
    $python setup.py bdist_wheel
+   
    $pip install dist/StochasticGhost-0.1.0-py3-none-any.whl
