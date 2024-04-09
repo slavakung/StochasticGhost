@@ -23,6 +23,5 @@ setup(
         'scikit-learn',
         'matplotlib',
         'autoray',
-    ]
     ],
 )
