@@ -15,7 +15,6 @@ setup(
         'numpy',
         'pot==0.9.3',
         'argparse',
-        'time',
         'scipy==1.11.4',
         'qpsolvers==4.2.0',
         'scikit-learn==1.3.0',
