@@ -11,7 +11,7 @@ setup(
     author_email='choudharyharsh122@gmail.com',
     packages=find_packages(),
     ext_modules=extensions,
-    install_requires=[python_requires='>=3.10',
+    python_requires='>=3.10',
     install_requires=[
         'numpy',
         'ot',
