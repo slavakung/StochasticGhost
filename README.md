@@ -16,18 +16,16 @@ To install and use this package, follow these steps:
    cd your_project
 
 # 2. Create a virtual environment with python 3.10
-  using python venv
+  ### using python venv
    
-   ## Create a new virtual environment with Python 3.10
    python3.10 -m venv myenv
 
-   ## Activate the virtual environment
+   Activate the virtual environment
    source myenv/bin/activate
 
-using conda environments
+  ### using conda environments
 
-   ## Create a new conda environment with Python 3.10
    conda create -n myenv python=3.10
 
-   ## Activate the conda environment
+   Activate the conda environment
    source activate myenv
