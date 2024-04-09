@@ -9,7 +9,6 @@ setup(
     author='Harsh Choudhary',
     author_email='choudharyharsh122@gmail.com',
     packages=find_packages(),
-    ext_modules=extensions,
     python_requires='>=3.10',
     install_requires=[
         'setuptools'
