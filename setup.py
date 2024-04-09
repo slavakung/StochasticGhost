@@ -14,7 +14,6 @@ setup(
         'setuptools',
         'numpy',
         'pot==0.9.3',
-        'warnings',
         'argparse',
         'time',
         'scipy==1.11.4',
