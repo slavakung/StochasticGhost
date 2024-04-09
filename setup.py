@@ -9,7 +9,7 @@ setup(
     author='Harsh Choudhary',
     author_email='choudharyharsh122@gmail.com',
     packages=find_packages(),
-    python_requires='>=3.10',
+    python_requires='==3.10.*',
     install_requires=[
         'setuptools',
         'numpy',
