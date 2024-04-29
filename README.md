@@ -41,3 +41,9 @@ To install and use this package, follow these steps:
    $python setup.py bdist_wheel
    
    $pip install dist/StochasticGhost-0.1.0-py3-none-any.whl
+
+# To run the tests:
+   ### Help
+   $python income.py --help
+   ### Run with a specific backend/model
+   $python income.py --model "pytorch_connect"
