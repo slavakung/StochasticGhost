@@ -2,9 +2,9 @@
 Algorithm for Solving Empirical Risk Minimization Problems with Constraints.
 The module will be an installable dependency which is backend agnostic and can take an objective and any number of constraints.
 The objective and constraints should be continuously differentiable functions.
-The package has a series of notebooks which show the algorithm's performance on benchmark datasets like: Propublica COMPAS, Adult Income.
-Unit tests are also performed over MNIST and CIFAR-10 datasets which are available as python scripts in the test folder.
-The ojective can be the loss of a ML model such as Neural Net and constraints can be some empirical risk measure.
+The package is an implementation of a general purpose constrained optimization algorithm originally presented in https://arxiv.org/abs/2307.02943. This could be used for variety of problems for bias reduction, simulation of various engineering, mechanics and physics problems and so on. 
+Unit tests are performed over MNIST and CIFAR-10 datasets which are available as python scripts in the test folder.
+The ojective can be the loss of an ML model such as Neural Net and constraints can be some empirical risk measure.
 
 ## Setup Instructions
 
