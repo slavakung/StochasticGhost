@@ -6,8 +6,8 @@ setup(
     name='StochasticGhost',
     version='0.1.0',
     description='Empirical Risk minimization with constraints',
-    author='Harsh Choudhary',
-    author_email='choudharyharsh122@gmail.com',
+    author='Vyacheslav Kungrutsev',
+    author_email='kunguvya@fel.cvut.cz',
     packages=find_packages(),
     python_requires='==3.10.*',
     install_requires=[
